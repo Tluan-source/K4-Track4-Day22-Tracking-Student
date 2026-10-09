@@ -103,9 +103,8 @@ def run_trackeval(trackeval_root: Path, run_name: str, benchmark: str, split: st
     Raises:
         subprocess.CalledProcessError: Khi TrackEval thoát với mã khác 0.
     """
-    cmd = [
-        sys.executable,
-        str(trackeval_root / "scripts" / "run_mot_challenge.py"),
+    script_path = str(trackeval_root / "scripts" / "run_mot_challenge.py")
+    cmd_args = [
         "--GT_FOLDER", str(trackeval_root / "data" / "gt" / "mot_challenge"),
         "--TRACKERS_FOLDER", str(trackeval_root / "data" / "trackers" / "mot_challenge"),
         "--BENCHMARK", benchmark,
@@ -115,6 +114,15 @@ def run_trackeval(trackeval_root: Path, run_name: str, benchmark: str, split: st
         "--METRICS", "HOTA", "CLEAR", "Identity",
         "--USE_PARALLEL", "False",
     ]
+    py_code = (
+        "import numpy as np\n"
+        "if not hasattr(np, 'float'): np.float = float\n"
+        "if not hasattr(np, 'int'): np.int = int\n"
+        "import sys, runpy\n"
+        f"sys.argv = [{script_path!r}] + {cmd_args!r}\n"
+        f"runpy.run_path({script_path!r}, run_name='__main__')\n"
+    )
+    cmd = [sys.executable, "-c", py_code]
     print("Đang chấm video luyện:\n  " + " ".join(cmd) + "\n")
     subprocess.run(cmd, check=True)
 
